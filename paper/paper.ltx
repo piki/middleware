@@ -2,6 +2,7 @@
 \usepackage{makeidx}  % allows for indexgeneration
 \usepackage{subfigure}
 \usepackage{tikz}
+\usepackage{url}
 \frontmatter
 \pagestyle{headings}
 \mainmatter
@@ -22,7 +23,7 @@ Peer-to-peer systems have been an exciting area of research.  Challenges in buil
 \end{abstract}
 
 \section{Introduction}
-2001 was an exciting time for research on peer-to-peer systems.  Napster~\cite{napster} had recently been shut down for abetting widespread copyright violation~\cite{napster-dies}.  Gnutella~\cite{gnutella-ripeanu} and Freenet~\cite{freenet-ian,freenet-theo} survived but had a completely unstructured design that compromised performance and search completeness.  Other peer-to-peer systems~\cite{kazaa,morpheus,grokster} built on Napster's ideas or Gnutella's protocol and were eventually shut down~\cite{kazaa-dies,morpheus-dies,grokster-dies} as Napster was.  The situation called both for better protocol design and for applications other than file sharing.
+2001 was an exciting time for research on peer-to-peer systems.  Napster~\cite{napster} had recently been shut down for abetting widespread copyright violation~\cite{napster-dies}.  Gnutella~\cite{gnutella-ripeanu} and Freenet~\cite{freenet-ian,freenet-theo} survived but had a completely unstructured design that compromised performance and search completeness.  Other peer-to-peer systems built on Napster's ideas or Gnutella's protocol and were eventually shut down~\cite{kazaa,kazaa-dies,morpheus-dies,grokster-dies} as Napster was.  The situation called both for better protocol design and for applications other than file sharing.
 
 Better protocol design came first.  Chord~\cite{chord}, CAN~\cite{can}, Pastry~\cite{pastry}, Tapestry~\cite{tapestry}, and Kademlia~\cite{kademlia} collectively introduced the idea of structured, decentralized overlay networks.  All featured efficient---$O(lg~n)$ or $O(n^{1/k})$---mapping from an arbitrary key to the node responsible for that key.
 
@@ -79,17 +80,70 @@ Using a corpus of 105,593 HTML documents and a trace of 95,409 web searches, we 
 
 \section{Where we are now}
 
-\subsection{Losses}
+Fifteen years have passed since Napster was released, and ten years have published since the first peer-to-peer search papers were published.  Where are we now?
+
+Very few prominent internet services or businesses use peer-to-peer technology.  The most successful peer-to-peer system by far is file sharing, accounting for 10\% to 20\% of peak-hours, fixed (not mobile) network traffic~\cite{sandvine}.  The only other peer-to-peer system that is a household name---clearly a subjective distinction on our part---is Spotify~\cite{spotify}.  Spotify's desktop client does the majority of its downloading from peers rather than Spotify's servers.
+
+%% WRITEME: PPStream, Funshion look legit
+
+Skype originally used peer-to-peer technology to provide a user directory and NAT traversal~\cite{skype-p2p}.  In 2012, they switched to centralized nodes run by Microsoft~\cite{skype-no-p2p}.
+
+%%WRITEME: others that have abandoned p2p?  backup apps?  streaming apps?
+
+\subsection{Disadvantages}
+
+From the perspective of running an internet service, peer-to-peer systems couple some desirable properties with some serious challenges.  The most appealing property of peer-to-peer systems is that it lets a business use customers' bandwidth and computing resources without paying for them.  But in most cases, the challenges overwhelm this potential cost savings:
+
+\begin{itemize}
+\item Most last-mile connections have asynchronous bandwidth, heavily favoring downloads over uploads.  A bandwidth-limited peer-to-peer service must therefore find many uploaders for each downloader.
+\item Using customers' computers in unexpected ways can lead to bad publicity.
+\item Peer-to-peer services require users to download and install software, which providers must then write and maintain for each target platform.  An unmodified web browser can access centralized services, but not peer-to-peer services.
+\item Customers tend to disconnect or shut down their computers.
+\item Mobile devices, which account for a rapidly increasing fraction of internet traffic~\cite{sandvine}, magnify all of these issues: they are battery- and CPU-constrained, their bandwidth is often metered, and they cannot run the same client software as desktop PCs.
+\item Customer-owned nodes are not trustworthy.
+\item Services with data retention or wiretap requirements will likely find it easier to comply with the law if infrastructure is centralized~\cite{skype-calea}.
+\end{itemize}
+
+Many of the limitations of customer-owned computing resources can be overcome with software, at a cost of additional redundancy and complexity.  However, the risks and costs of doing so are probably higher than the risks and costs of running services on professionally managed servers.  Hosted computing, storage, and bandwidth resources have gotten dramatically cheaper per unit in the last decade~\cite{hosting-costs}.  Utility computing, both infrastructure as a service (IaaS) and platform as a service (PaaS), allows new internet services to start out small and cheap without relying on peer-to-peer systems.  At this point, costs, risks, and complexity all favor starting new internet services in data centers.
 
 \subsection{Advantages}
 
+In spite of the challenges, the most popular file-sharing services still use peer-to-peer systems~\cite{sandvine,bittorrent,edonkey,ares}.  We believe that this fact is due almost entirely to censorship resistance.  No matter how widely replicated an infrastructure-based service is, it is still vulnerable to a well placed letter, phone call, domain seizure, or DMCA takedown notice.  Peer-to-peer systems have proven far more resilient.  In 1993, John Gilmore said, ``The Net interprets censorship as damage and routes around it''~\cite{gilmore-time}.  Peer-to-peer systems codify that ideal in software.
+
+Much of the censorship exercised against web sites and peer-to-peer systems is copyright related.  Publishers of movies, songs, books, and software, among others, want to preserve their ability to charge for each copy made of their copyrighted works.  However, censorship happens for other reasons, too.  For example:
+
+\begin{itemize}
+\item {\bf Political} - In 2008, both the McCain~\cite{mccain-dmca} and Obama~\cite{obama-dmca} campaigns had political messages removed due to DMCA takedown notices.  In 2008, the nation of Georgia blocked all websites with addresses ending in {\tt .ru}~\cite{georgia-russia}.
+\item {\bf Moral} - Russia has instituted a secret blacklist of sites relating to drugs, suicide, or pornography.~\cite{russia-bbc}.  The United Kingdom is creating its own list, currently optional but enabled by default, to restrict access to pornography; web forums; information about violence, terrorism, and eating disorders; and ``esoteric material''~\cite{uk-blacklist}.
+\item {\bf Security} - Volkswagen successfully sued to censor research about vulnerabilities in its keyless entry systems~\cite{vw-jalopnik}.  Life science researchers have instituted policies for censoring themselves when research seems to pose more risk than social good~\cite{who-bulletin}.\item {\bf Competitive} - Universal Music Group briefly had Megaupload's ``Mega Song'' removed from YouTube, despite not having any copyright claim against it~\cite{mega-song}.
+\item {\bf Suppressing criticism} - KTVU used DMCA takedown requests to remove copies of a newscast in which its anchor read obviously fake and offensive names for the pilots of Asiana flight 214~\cite{asiana}.
+\item {\bf Accidental} - YouTube's Content ID system automatically flags videos for possible removal, but doesn't always get it right; Content ID also cannot assess the potential that a video might fall under fair use~\cite{content-id}.  While attempting to prevent unauthorized distribution of Windows~8 and Office, Microsoft has accidentally sent takedown notices for the BBC, Wikipedia, and OpenOffice, among others~\cite{microsoft-win8,microsoft-office}.
+\end{itemize}
+Peer-to-peer systems provide an important distribution channel for content when censors get too heavy handed.
+
+Formal peer-to-peer systems are not the only way that the internet routes around censorship.  Content that is small and not obviously offensive or copyright-infringing will often end up widely distributed and widely mirrored if someone tries to censor it.  Far more people know what Barbara Streisand's house looks like, how badly Suburban Express treats its customers, and how to 3D print a gun than would have if the interested parties hadn't attempted to censor that information~\cite{streisand,suburban-express,3d-guns-bbc}.  In a sense, technology news sites, parodies, memes, and web forums act like an informal peer-to-peer network when they mirror content in this fashion.
+
 \subsection{Impacts}
+
+Several aspects of peer-to-peer systems have found their way into centrally managed systems.  Most large-scale internet services are geographically distributed, self-organizing, and resilient.  Some systems, including the Cassandra database and the Tahoe-LAFS file system, explicitly incorporate a DHT~\cite{cassandra,tahoe-lafs}.
+
+Another platform that borrows from peer-to-peer systems is BOINC, which runs SETI@home~\cite{boinc}.  Although it harvests CPU cycles from end users' computers, we do not consider BOINC to be a classic peer-to-peer system.  Worker nodes are essentially only servers---they do not consume the service that other nodes provide---and are centrally managed rather than self-organizing.  However, BOINC  demonstrates the continuing value of harvesting spare CPU cycles.
 
 \section{Where we go from here}
 
+We believe that peer-to-peer systems continue to have both technical and social value.  They are a good way for modestly funded research groups to bootstrap an internet service.  They provide a stress test for new protocols; protocols and techniques that work within the security and resource constraints of a peer-to-peer system will often work even better in a centralized system.  And, of course, they provide outstanding resistance to censorship, in a way that commercial and centrally managed services cannot.
 
-FIXME : bibliography styles wildly inconsistent
+To that end, we believe the most important focus areas in peer-to-peer research are:
+\begin{itemize}
+\item {\bf Security} - Services that become popular, or that host content that someone wishes to censor, become a target for attacks.  Attackers may disrupt routing or searching, or they may intercept or modify content.  Peer-to-peer systems have to deal with the possibility that nodes are Byzantine faulty.
+\item {\bf Anonymity} - If the main use case for peer-to-peer systems is distributing censored content, then participants might need to remain anonymous when publishing or retrieving that content.  Providing anonymity in a robust, efficient way could provide immense social value.
+\item {\bf Searchability} - Simply put, we cannot read what we cannot find.  Right now, BitTorrent users rely on centralized, commercial web sites to map keywords to document identifiers.  Eventually, whether through censorship or tampering, that approach is likely to cease to work.  Existing and new peer-to-peer search technologies should be applied to ensure that users can find content.
+\end{itemize}
+
+In 2013, as in 2001, peer-to-peer systems remain an exciting, fruitful area of research.
+
 \bibliography{search}
 \bibliographystyle{plain}
+\small
 
 \end{document}
