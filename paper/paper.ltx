@@ -26,13 +26,13 @@ Peer-to-peer systems have been an exciting area of research.  Challenges in buil
 \section{Introduction}
 2001 was an exciting time for research on peer-to-peer systems.  Napster~\cite{napster} had recently been shut down for abetting widespread copyright violation~\cite{napster-dies}.  Gnutella~\cite{gnutella-ripeanu} and Freenet~\cite{freenet-ian,freenet-theo} survived but had completely unstructured designs that compromised performance and search completeness.  Other peer-to-peer systems built on Napster's ideas or Gnutella's protocol and were eventually shut down~\cite{kazaa,kazaa-dies,morpheus-dies,grokster-dies} as Napster was.  The situation called both for better protocol design and for applications other than file sharing.
 
-Chord~\cite{chord}, CAN~\cite{can}, Pastry~\cite{pastry}, Tapestry~\cite{tapestry}, and Kademlia~\cite{kademlia} collectively introduced the idea of structured, decentralized overlay networks.  The abstraction they implemented was a distributed hash table, or DHT, mapping fixed-size, opaque keys to arbitrary values.  All of the DHTs were efficient, requiring just $O(lg~n)$ or $O(n^{1/k})$ operations to route to a key in an $n$-node system.
+Chord~\cite{chord}, CAN~\cite{can}, Pastry~\cite{pastry}, Tapestry~\cite{tapestry}, and Kademlia~\cite{kademlia} collectively introduced the idea of structured, decentralized overlay networks.  The abstraction they implemented was a distributed hash table, or DHT, mapping fixed-size, opaque keys to arbitrary values.  All of the DHTs were efficient, requiring just $O(\lg n)$ or $O(n^{1/d})$ operations to route to a key in an $n$-node system.
 
 Soon after, distributed file systems like the Cooperative File System (CFS)~\cite{cfs} and PAST~\cite{past-hotos} were built on top of DHTs.  At least initially, however, neither the DHTs nor the distributed file systems provided any search functionality.
 
 In 2002, we set out to design a complete, efficient keyword search service~\cite{reynolds2003} for applications based on DHTs.
 
-This paper revisits our original paper, surveys some of the research on peer-to-peer keyword searching that followed, examines the state of peer-to-peer technologies today, and identifies some of the lasting impacts that peer-to-peer networks have had.
+This paper revisits our original paper, surveys some other interesting research on peer-to-peer keyword searching, examines the state of peer-to-peer technologies today, and identifies some of the lasting impacts that peer-to-peer networks have had.
 
 \subsection{A definition}
 
@@ -92,19 +92,32 @@ We measured the effectiveness of our optimizations using a corpus of 105,593 HTM
 
 \subsection{PIER}
 
-To be written~\cite{pier}.
+PIER implements relational queries on top of a DHT, scalable to at least thousands of nodes~\cite{pier}.  Relations composed of tuples are stored in the DHT; each tuple is stored according to its namespace and primary key.  Joins are performed by retrieving the relevant relations with multicast queries, then storing them back into the DHT in temporary relations keyed (in the DHT) by the appropriate column for the join.  Joins based on Bloom filters are provided, as well, to reduce the number of tuples that must be transferred to temporary tables.
+
+PIER provides expressiveness well beyond keyword-index systems, and it can easily be used to implement keyword queries.  However, we believe that the number of nodes involved in each query and the number of bytes transferred among those nodes will be much higher than in a purpose-built keyword-search system.
 
 \subsection{Planetp}
 
-To be written~\cite{planetp}.
+PlanetP is a file sharing system built with an emphasis on searchability~\cite{planetp}.  Each node in the system hosts the documents its user wishes to share, as opposed to a DHT where those documents would be copied onto unrelated nodes.  Each node builds an inverted index of the keywords in the documents it shares, then computes a Bloom filter to represent the set of keywords found in at least one document on that node.  All nodes in the system flood their Bloom filters to all other nodes, then gossip updates as the Bloom filters change.  When a user wants to perform a query, PlanetP uses the Bloom filters to figure out which remote nodes to contact.  The false-positive aspect of Bloom filters adds an essentially harmless probability that some nodes will be contacted and return zero results.
 
 \subsection{OverCite}
 
-To be written~\cite{overcite}.
+OverCite is a distributed version of CiteSeer, which is a library and search engine for scientific research papers~\cite{overcite}.  OverCite distributes responsibility for storing, indexing, and searching papers among all participating nodes using a DHT.  The responsibility for indexing those documents is divided among $k$ partitions, each of which maps into the DHT.  The rationale for using partitions is to avoid making every search query a broadcast.  Each partition is $1/k$ the size of the full index and is replicated $n/k$ times, so each node must store $1/k$ of the total index and will receive $1/n$ of the query load.  Two additional optimizations are proposed: replicating author and title metadata to all nodes, and replicating common search terms on all nodes.  Both optimizations allow certain queries to be answered by a single node, rather than sending it to $k$ nodes to cover all partitions.
 
-\subsection{InfoBeacons}
+%%\subsection{InfoBeacons}
+%%To be written~\cite{infobeacons}.
+%%Not very interesting.
+%%InfoBeacons = "beacons" provide meta-search for deep-web search services
+%%("sources").  Gradually learns which sources are best for which sorts of
+%%queries.  Uses a p2p network of beacons.  User sends a query to one
+%%beacon, which exhausts its sources trying to provide enough results before
+%%forwarding the query to randomly selected other beacons in the (presumably
+%%unstructured) p2p network.
 
-To be written~\cite{infobeacons}.
+%%\subsection{YaCy}
+%%To be written~\cite{yacy}.
+%%\subsection{FAROO}
+%%To be written~\cite{faroo}.
 
 \section{Where we are now}
 
