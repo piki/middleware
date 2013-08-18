@@ -4,3 +4,4 @@
 *.synctex*
 *.bak
 *.bcf
+post-*.tex

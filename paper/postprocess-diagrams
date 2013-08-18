@@ -1,3 +1,11 @@
 #!/bin/sh
 
-perl -i.bak -pne 's/\bs([AB])\b/\$s_$1\$/g ; s/(\S+)\\\^{}([^ }]+)/\$$1\\cap $2\$/' scheme-*tex
+for i in scheme-*.tex; do
+  echo "$i > post-$i"
+  perl -pne '
+    s/\\\$/\$/g;
+    s/\\\_/\_/g;
+    s/\\ensuremath{\\backslash}/\\/g;
+    s#(node at \(\d+\.\d+\\du,)(\d+\.\d+)(\\du)#$1.($2-0.25).$3#e;
+  ' $i > post-$i
+done
