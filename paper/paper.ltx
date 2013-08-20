@@ -26,7 +26,7 @@ Peer-to-peer systems have been an exciting area of research.  Challenges in buil
 \section{Introduction}
 2001 was an exciting time for research on peer-to-peer systems.  Napster~\cite{napster} had recently been shut down for abetting widespread copyright violation~\cite{napster-dies}.  Gnutella~\cite{gnutella-ripeanu} and Freenet~\cite{freenet-ian,freenet-theo} survived but had completely unstructured designs that compromised performance and search completeness.  Other peer-to-peer systems built on Napster's ideas or Gnutella's protocol and were eventually shut down~\cite{kazaa,kazaa-dies,morpheus-dies,grokster-dies} as Napster was.  The situation called both for better protocol design and for applications other than file sharing.
 
-Chord~\cite{chord}, CAN~\cite{can}, Pastry~\cite{pastry}, Tapestry~\cite{tapestry}, and Kademlia~\cite{kademlia} collectively introduced the idea of structured, decentralized overlay networks.  The abstraction they implemented was a distributed hash table, or DHT, mapping fixed-size, opaque keys to arbitrary values.  All of the DHTs were efficient, requiring just $O(\lg n)$ or $O(n^{1/d})$ operations to route to a key in an $n$-node system.
+Chord~\cite{chord}, CAN~\cite{can}, Pastry~\cite{pastry}, Tapestry~\cite{tapestry}, and Kademlia~\cite{kademlia} collectively introduced the idea of structured, decentralized overlay networks.  The abstraction they implemented was a distributed hash table, or DHT, mapping fixed-size, opaque keys to arbitrary values.  All of the DHTs were efficient, requiring just $O(\lg n)$ operations to route to a key in an $n$-node system.\footnote{Routing in CAN requires $O(n^{1/d})$ hops, with $d$ equal to the number of dimensions.  CAN's scaling is equivalent to $O(\lg n)$ when $d=\lg n$.}
 
 Soon after, distributed file systems like the Cooperative File System (CFS)~\cite{cfs} and PAST~\cite{past-hotos} were built on top of DHTs.  At least initially, however, neither the DHTs nor the distributed file systems provided any search functionality.
 
@@ -42,11 +42,9 @@ Some prominent peer-to-peer services, including Napster, Skype prior to 2012, an
 
 \section{Efficient peer-to-peer searching}
 
-A good peer-to-peer search feature needs to be decentralized, efficient, and complete.  Early peer-to-peer systems were not.  Napster's search feature was centralized, which made it unscalable and easy to shut down.  Gnutella's search feature was both inefficient and incomplete: it flooded queries throughout the network up to a fixed radius $TTL$, but it could not locate any resources more than $TTL$ hops away from the requestor.  Early DHTs did not provide search at all.
+A good peer-to-peer search feature needs to be decentralized, efficient, and complete.  Early peer-to-peer systems were not.  Napster's search feature was centralized, which made it unscalable and easy to shut down.  Gnutella's search feature was both inefficient and incomplete: it flooded queries throughout the network up to a fixed number of hops away from the requestor, limited by a time-to-live (TTL) value.  However, it could not locate any resources beyond that number of hops.  Early DHTs did not provide search at all.
 
 \subsection{Our contribution}
-
-The simplest implementation of keyword search on a DHT is an {\em inverted index}, a shown in Figure~\ref{naive}.  The DHT maps each keyword to a list of all documents containing that keyword.  A client performing a search for one keyword retrieves the list of documents associated with that keyword.  To perform a conjunctive (``and'') query of multiple keywords, the client retrieves the list of documents for each keyword and locally calculates the intersection.  This approach is clearly decentralized and complete, but it is not especially efficient.  If the user searches for keywords that individually appear in many documents but that rarely appear together, then downloading the entire document list for each word is wasteful.
 
 \begin{figure}[t]
 \begin{center}
@@ -64,6 +62,8 @@ keyword.]{
 \caption{Adding a Bloom filter to DHT search}
 \end{figure}
 
+The simplest implementation of keyword search on a DHT uses an {\em inverted index}, as shown in Figure~\ref{naive}.  The DHT maps each keyword to a list of document IDs corresponding to the documents that contain the keyword.  A client performing a search for one keyword retrieves the list of document IDs associated with that keyword.  To perform a conjunctive (``and'') query of multiple keywords, the client retrieves the list of document IDs for each keyword and locally calculates the intersection.  This approach is clearly decentralized and complete, but it is not especially efficient.  If the user searches for keywords that individually appear in many documents but that rarely appear together, then downloading the entire list of document IDs for each word is wasteful.
+
 \begin{figure}[t]
 \begin{center}
 \mbox{\subfigure[\small $F(A)$ is already in the cache at node $s_B$.]{
@@ -78,11 +78,11 @@ keyword.]{
 \caption{Caching and incremental results}
 \end{figure}
 
-Our paper proposed three optimizations to this simple approach: Bloom filters, caching, and incremental results.  For these to work, we changed the protocol so that intersections are calculated within the DHT, as shown in Figure~\ref{bloom}.  That is, the client sends the entire query---e.g., ``efficient AND network AND protocols''---to the node hosting the first keyword.  That node sends the remaining words in the query, along with a list of documents containing the first keyword, to the node responsible for the second keyword.  This second node calculates the intersection between the second keyword's document set and the document set it received from the first node.  Forwarding continues in this fashion until all keywords have been considered (all document sets have been intersected), at which point the last node sends the final list---identifiers of the documents containing all the keywords---back to the client.
+Our paper proposed three optimizations to this simple approach: Bloom filters, caching, and incremental results.  For these to work, we changed the protocol so that intersections are calculated within the DHT, as shown in Figure~\ref{bloom}.  That is, the client sends the entire query---e.g., ``efficient AND network AND protocols''---to the node hosting the first keyword.  That node sends the remaining words in the query, along with a list of document IDs for the first keyword, to the node responsible for the second keyword.  This second node calculates the intersection between the second keyword's set of document IDs and the set of document IDs it received from the first node.  Forwarding continues in this fashion until all keywords have been considered (all sets of document IDs have been intersected), at which point the last node sends the final list---IDs of the documents containing all the keywords---back to the client.
 
-{\bf Bloom filters}~\cite{bloom,summary-cache,mullin-1990} are a compact but lossy way to represent membership in a set.  They answer the question ``Is element $x$ in the set,'' occasionally returning false positives---a value of ``true'' even when $x$ is not in the set.  In our search system, we used them as a compact way to represent the set of documents that contain a given keyword.  Instead of transferring entire lists of documents matching one or more keywords, the system transferred Bloom filters representing those document lists.
+{\bf Bloom filters}~\cite{bloom,summary-cache,mullin-1990} are a compact but lossy way to represent membership in a set.  They answer the question ``Is element $x$ in the set,'' occasionally returning false positives---a value of ``true'' even when $x$ is not in the set.  In our search system, we used them as a compact way to represent the set of document IDs for documents that contain a given keyword.  Instead of transferring entire lists of document IDs, the system transferred Bloom filters representing those lists.
 
-{\bf Caching} reduces both network traffic and latency by avoiding the transfer of information that has been used recently.  Our system cached Bloom-encoded lists of documents matching a given keyword.  Figure~\ref{caching} shows an example where node $s_B$ already has the Bloom filter $F(A)$; the client sends the query directly to node $s_B$, and eliminating one hop and the cost of transferring $F(A)$.  Each cache hit eliminates one hop and the associated transfer cost.  Caching allowed us to use larger Bloom filters, with a correspondingly lower false-positive rate.
+{\bf Caching} reduces both network traffic and latency by avoiding the transfer of information that has been used recently.  Our system cached Bloom-encoded lists of document IDs corresponding to a given keyword.  Figure~\ref{caching} shows an example where node $s_B$ already has the Bloom filter $F(A)$; the client sends the query directly to node $s_B$, eliminating one hop and the cost of transferring $F(A)$.  Each cache hit eliminates one hop and the associated transfer cost.  Caching allowed us to use larger Bloom filters, with a correspondingly lower false-positive rate.
 
 {\bf Incremental results} take advantage of the fact that users often only want a few results---say, the best ten---even when many documents match their query.  At each hop, our system transferred only a few Bloom filter-encoded document IDs at a time, rather than the whole list.  This optimization tied the cost of answering a query to the size of the answer the user wanted, rather than to the total number of results available.  Figure~\ref{chunks} shows an example in which three chunks of the document list $A$ are sent, and then the requested result size is reached.
 
@@ -90,19 +90,23 @@ In addition, our system incorporated the idea of virtual hosts~\cite{cfs}.  Peer
 
 We measured the effectiveness of our optimizations using a corpus of 105,593 HTML documents and a trace of 95,409 web searches.  For each query, we calculated the number of bytes transferred and the total time for the system to satisfy the query.  Taken together, our optimizations reduced the time to answer a query by about an order of magnitude.
 
-\subsection{PIER}
+\subsection{Similar work}
 
-PIER implements relational queries on top of a DHT, scalable to at least thousands of nodes~\cite{pier}.  Relations composed of tuples are stored in the DHT; each tuple is stored according to its namespace and primary key.  Joins are performed by retrieving the relevant relations with multicast queries, then storing them back into the DHT in temporary relations keyed (in the DHT) by the appropriate column for the join.  Joins based on Bloom filters are provided, as well, to reduce the number of tuples that must be transferred to temporary tables.
+Other research projects tackled the problem of peer-to-peer keyword search differently.  This section explores three of those systems.
+
+\subsubsection{PIER.}
+
+PIER~\cite{pier} implements relational queries on top of a DHT, scalable to at least thousands of nodes.  Relations composed of tuples are stored in the DHT; each tuple is stored according to its namespace and primary key.  Joins are performed by retrieving the relevant relations with multicast queries, then storing them back into the DHT in temporary relations keyed (in the DHT) by the appropriate column for the join.  Joins based on Bloom filters are provided, as well, to reduce the number of tuples that must be transferred to temporary tables.
 
 PIER provides expressiveness well beyond keyword-index systems, and it can easily be used to implement keyword queries.  However, we believe that the number of nodes involved in each query and the number of bytes transferred among those nodes will be much higher than in a purpose-built keyword-search system.
 
-\subsection{Planetp}
+\subsubsection{PlanetP.}
 
-PlanetP is a file sharing system built with an emphasis on searchability~\cite{planetp}.  Each node in the system hosts the documents its user wishes to share, as opposed to a DHT where those documents would be copied onto unrelated nodes.  Each node builds an inverted index of the keywords in the documents it shares, then computes a Bloom filter to represent the set of keywords found in at least one document on that node.  All nodes in the system flood their Bloom filters to all other nodes, then gossip updates as the Bloom filters change.  When a user wants to perform a query, PlanetP uses the Bloom filters to figure out which remote nodes to contact.  The false-positive aspect of Bloom filters adds an essentially harmless probability that some nodes will be contacted and return zero results.
+PlanetP~\cite{planetp} is a file sharing system built with an emphasis on searchability.  Each node in the system hosts the documents its user wishes to share, as opposed to a DHT where those documents would be copied onto unrelated nodes.  Each node builds an inverted index of the keywords in the documents it shares, then computes a Bloom filter to represent the set of keywords found in at least one document on that node.  All nodes in the system flood their Bloom filters to all other nodes, then gossip updates as the Bloom filters change.  When a user wants to perform a query, PlanetP uses the Bloom filters to figure out which remote nodes to contact.  The false-positive aspect of Bloom filters adds an essentially harmless probability that some nodes will be contacted and return zero results.
 
-\subsection{OverCite}
+\subsubsection{OverCite.}
 
-OverCite is a distributed version of CiteSeer, which is a library and search engine for scientific research papers~\cite{overcite}.  OverCite distributes responsibility for storing, indexing, and searching papers among all participating nodes using a DHT.  The responsibility for indexing those documents is divided among $k$ partitions, each of which maps into the DHT.  The rationale for using partitions is to avoid making every search query a broadcast.  Each partition is $1/k$ the size of the full index and is replicated $n/k$ times, so each node must store $1/k$ of the total index and will receive $1/n$ of the query load.  Two additional optimizations are proposed: replicating author and title metadata to all nodes, and replicating common search terms on all nodes.  Both optimizations allow certain queries to be answered by a single node, rather than sending it to $k$ nodes to cover all partitions.
+OverCite~\cite{overcite} is a distributed version of CiteSeer, which is a library and search engine for scientific research papers.  OverCite distributes responsibility for storing, indexing, and searching papers among all participating nodes using a DHT.  The responsibility for indexing those documents is divided among $k$ partitions, each of which maps into the DHT.  The rationale for using partitions is to avoid making every search query a broadcast.  Each partition is $1/k$ the size of the full index and is replicated $n/k$ times, so each node must store $1/k$ of the total index and will receive $1/n$ of the query load.  Two additional optimizations are proposed: replicating author and title metadata to all nodes, and replicating common search terms on all nodes.  Both optimizations allow certain queries to be answered by a single node, rather than sending it to $k$ nodes to cover all partitions.
 
 %%\subsection{InfoBeacons}
 %%To be written~\cite{infobeacons}.
@@ -129,15 +133,15 @@ Spotify's network is a hybrid of client-server and peer-to-peer protocols.  Each
 
 Spotify's central servers make the peer-to-peer protocol simpler by providing lists of online clients and by providing a backstop data source for content not present within two overlay hops.  The peer-to-peer network offloads the majority of song download traffic~\cite{spotify}.
 
-Skype originally used peer-to-peer technology to provide a user directory and NAT traversal~\cite{skype-p2p}.  Audio and video streams and chat messages go directly from one user to another whenever possible.  {\em Supernodes} maintain list of logged-in users and a current IP address for each one.  Supernodes also assist in routing calls and chat messages to clients whose device is suspended or behind a firewall.  In 2012, Skype disabled supernode functionality on end-user PCs and created dedicated {\em mega-supernodes} in data centers run by Microsoft~\cite{skype-no-p2p,skype-blog}.
+Skype originally used peer-to-peer technology to provide a user directory and NAT traversal~\cite{skype-p2p}.  Audio and video streams and chat messages go directly from one user to another whenever possible.  Each {\em supernode} maintains a list of logged-in users and a current IP address for each one.  Supernodes also assist in routing calls and chat messages to clients whose device is suspended or behind a firewall.  In 2012, Skype disabled supernode functionality on end-user PCs and created dedicated {\em mega-supernodes} in data centers run by Microsoft~\cite{skype-no-p2p,skype-blog}.
 
 Two large, live-video streaming services in China, PPS.tv (PPStream) and Funshion use peer-to-peer technology.  PPStream uses the DONet protocol, which is an unstructured, mesh-style multicast~\cite{ppstream,donet}.  Funshion is based on BitTorrent~\cite{funshion-bt}.
 
 %%WRITEME: others that have abandoned p2p?  backup apps?  streaming apps?
 
-\subsection{Disadvantages}
+\subsection{Disadvantages of peer-to-peer systems}
 
-From the perspective of running an Internet service, peer-to-peer systems couple some desirable properties with some serious challenges.  The most appealing property of peer-to-peer systems is that it lets a business use customers' bandwidth and computing resources without paying for them.  But in most cases, the challenges overwhelm this potential cost savings:
+From the perspective of running an Internet service, peer-to-peer systems couple some desirable properties with some serious challenges.  The most appealing property of a peer-to-peer system is that it lets a business use customers' bandwidth and computing resources without paying for them.  But in most cases, the challenges overwhelm this potential cost savings:
 
 \begin{itemize}
 \item Most last-mile connections have asynchronous bandwidth, heavily favoring downloads over uploads.  A bandwidth-limited peer-to-peer service like file sharing or video streaming must therefore find many uploaders for each downloader.
@@ -150,13 +154,13 @@ From the perspective of running an Internet service, peer-to-peer systems couple
 \item Services with data retention or wiretap requirements will likely find it easier to comply with the law if infrastructure is centralized~\cite{skype-calea}.
 \end{itemize}
 
-Some of the limitations of customer-owned computing resources, particularly security and reliability, can be overcome with software, at a cost of additional redundancy and complexity.  Others, including their poor network connections and customers' aversion to installing additional software, are more stubborn.  Overall, the risks and costs of harnessing customer-owned resources are almost always higher than the risks and costs of running services in professionally managed data centers.
+Some of the limitations of customer-owned computing resources, particularly security and reliability, can be overcome with software, at a cost of additional redundancy and complexity.  Others, including poor network connectivity and customers' aversion to installing additional software, are more stubborn.  Overall, the risks and costs of harnessing customer-owned resources are almost always higher than the risks and costs of running services in professionally managed data centers.
 
 Further, hosted computing, storage, and bandwidth resources have gotten dramatically cheaper per unit in the last decade~\cite{hosting-costs}.  Utility computing, both infrastructure as a service (IaaS) and platform as a service (PaaS), allows new Internet services to start out cheaply with just a fraction of a single server, without relying on peer-to-peer systems.  Both Amazon and Google offer a resource-limited tier of hosting services for free.  At this point, even cash-strapped startups favor starting new Internet services in data centers.
 
-Web search in particular is a service that favors data centers over peer-to-peer systems.  Our test corpus contained 105,593 documents, while Google's contains around fifty billion.  A fully featured web search service does things like spelling suggestions, autocomplete, instant search, location awareness, and personalization that are not amenable to caching or representation in Bloom filters.  Our search protocol masks wide-area bandwidth and latency constraints well enough for the demands of a file-sharing service, perhaps, but not well enough to be competitive with a modern search engine built with dedicated computing resources.
+Web search in particular is a service that favors data centers over peer-to-peer systems.  Our test corpus contained 105,593 documents, while Google's contains around fifty billion.  A fully featured web search service does things like spelling suggestions, autocomplete, instant search, location awareness, and personalization that are not amenable to caching or representation in Bloom filters.  Our and others' search protocols mask wide-area bandwidth and latency constraints well enough for the demands of a file-sharing service, perhaps, but not well enough to be competitive with a modern search engine built with dedicated computing resources.
 
-\subsection{Advantages}
+\subsection{Advantages of peer-to-peer systems}
 
 In spite of the challenges, the most popular file-sharing services still use peer-to-peer systems~\cite{sandvine,bittorrent,edonkey,ares}.  We believe that this fact is due almost entirely to censorship resistance.  No matter how widely replicated an infrastructure-based service is, it is still vulnerable to a well placed letter, phone call, domain seizure, or DMCA takedown notice.  Peer-to-peer systems have proven far more resilient.  In 1993, John Gilmore said, ``The Net interprets censorship as damage and routes around it''~\cite{gilmore-time}.  Peer-to-peer systems codify that ideal in software.
 
@@ -171,7 +175,7 @@ Much of the censorship exercised against web sites and peer-to-peer systems is c
 \end{itemize}
 In each case, censorship was possible because a small number of administrative entities---ISPs, domain registrars, YouTube, research conference organizers, etc.---could be compelled to block or remove the content.  Peer-to-peer systems provide an alternative distribution channel for content when censors get too heavy handed.
 
-Formal peer-to-peer systems are not the only way that the Internet routes around censorship.  Content that is small and not obviously offensive or copyright-infringing will often end up widely distributed and widely mirrored if someone tries to censor it.  Far more people know what Barbara Streisand's house looks like, how badly the Suburban Express bus company treats its customers, and how to 3D print a gun than would have if the interested parties hadn't attempted to censor that information~\cite{streisand,suburban-express,3d-guns-bbc}.  In a sense, technology news sites, parodies, memes, and web forums act like an informal peer-to-peer network when they mirror content in this fashion.
+Formal peer-to-peer systems are not the only way that the Internet routes around censorship.  Content that is small and not obviously offensive or copyright-infringing will often end up widely distributed and widely mirrored if someone tries to censor it.  Far more people know what Barbara Streisand's house looks like, how badly the Suburban Express bus company treats its customers, and how to 3D print a gun than would have if interested parties hadn't attempted to censor that information~\cite{streisand,suburban-express,3d-guns-bbc}.  In a sense, technology news sites, parodies, memes, and web forums act like an informal peer-to-peer network when they mirror content in this fashion.
 
 \subsection{Impacts}
 
@@ -185,7 +189,7 @@ We believe that peer-to-peer systems continue to have both technical and social 
 
 To that end, we believe the most important focus areas in peer-to-peer research are:
 \begin{itemize}
-\item {\bf Security} - Services that become popular, or that host content that someone wishes to censor, become the target of attacks.  Attackers may disrupt routing or searching, or they may intercept or modify content.  Peer-to-peer systems have to deal with the possibility that nodes are Byzantine faulty.
+\item {\bf Security} - Services that become popular, or that host content that someone wishes to censor, become the target of attacks.  Attackers may disrupt routing or searching, or they may intercept or modify content.  Peer-to-peer systems have to deal with the possibility that nodes are Byzantine faulty~\cite{byzantine}.
 \item {\bf Anonymity} - If the main use case for peer-to-peer systems is distributing censored content, then participants might need to remain anonymous when publishing or retrieving that content.  Providing anonymity in a robust, efficient way could provide immense social value.
 \item {\bf Searchability} - Simply put, we cannot read what we cannot find.  Right now, BitTorrent users rely on centralized, commercial web sites to map keywords to document identifiers.  Eventually, whether through legal changes or technical attacks, these sites will probably get shut down.  Existing and new peer-to-peer search technologies should be applied to ensure that users can find content.
 \end{itemize}
