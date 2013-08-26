@@ -86,7 +86,7 @@ Caching reduces both network traffic and latency by avoiding the transfer of inf
 
 Incremental results take advantage of the fact that users often only want a few results---say, the best ten---even when many documents match their query.  At each hop, our system transferred only a few Bloom filter-encoded document IDs at a time, rather than the whole list.  This optimization tied the cost of answering a query to the size of the answer the user wanted, rather than to the total number of results available.  Figure~\ref{chunks} shows an example in which three chunks of the document list $A$ are sent, and then the requested result size is reached.
 
-In addition, our system incorporated the idea of virtual hosts~\cite{cfs}.  Peer-to-peer systems are often heterogeneous in their capabilities: nodes differ in their available CPU power and network capacity.  Assigning more-capable nodes a larger number of virtual hosts lets us take advantage of their additional capacity.
+In addition, our system incorporated the idea of virtual hosts~\cite{cfs}.  Peer-to-peer systems are often heterogeneous in their capabilities: nodes differ in their available CPU power and network capacity.  Assigning more-capable nodes a larger number of virtual hosts allowed us to take advantage of their additional capacity.
 
 We measured the effectiveness of our optimizations using a corpus of 105,593 HTML documents and a trace of 95,409 web searches.  For each query, we calculated the number of bytes transferred and the total time for the system to satisfy the query.  Taken together, our optimizations reduced the time to answer a query by about an order of magnitude.
 
