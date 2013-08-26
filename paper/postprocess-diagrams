@@ -6,6 +6,6 @@ for i in scheme-*.tex; do
     s/\\\$/\$/g;
     s/\\\_/\_/g;
     s/\\ensuremath{\\backslash}/\\/g;
-    s#(node at \(\d+\.\d+\\du,)(\d+\.\d+)(\\du)#$1.($2-0.25).$3#e;
+    s#(node(?:\[\S+\])? at \(\d+\.\d+\\du,)(\d+\.\d+)(\\du)#$1.($2-0.25).$3#e;
   ' $i > post-$i
 done
