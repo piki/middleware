@@ -1,5 +1,5 @@
 \documentclass{llncs}
-\usepackage{makeidx}  % allows for indexgeneration
+\usepackage{makeidx}
 \usepackage{subfigure}
 \usepackage{tikz}
 \usepackage{url}
@@ -108,21 +108,6 @@ PlanetP~\cite{planetp} is a file sharing system built with an emphasis on search
 
 OverCite~\cite{overcite} is a distributed version of CiteSeer, which is a library and search engine for scientific research papers.  OverCite distributes responsibility for storing, indexing, and searching papers among all participating nodes using a DHT.  The responsibility for indexing those documents is divided among $k$ partitions; the nodes responsible for a partition in the DHT index the documents contained in the partition.  The rationale for using partitions is to avoid making every search query a broadcast.  Each partition is $1/k$ the size of the full index and is replicated $n/k$ times, so each node must store $1/k$ of the total index and will receive $1/n$ of the query load.  Two additional optimizations are proposed: replicating author and title metadata to all nodes, and replicating common search terms on all nodes.  Both optimizations allow certain queries to be answered by a single node, rather than sending each query to $k$ nodes to cover all partitions.
 
-%%\subsection{InfoBeacons}
-%%To be written~\cite{infobeacons}.
-%%Not very interesting.
-%%InfoBeacons = "beacons" provide meta-search for deep-web search services
-%%("sources").  Gradually learns which sources are best for which sorts of
-%%queries.  Uses a p2p network of beacons.  User sends a query to one
-%%beacon, which exhausts its sources trying to provide enough results before
-%%forwarding the query to randomly selected other beacons in the (presumably
-%%unstructured) p2p network.
-
-%%\subsection{YaCy}
-%%To be written~\cite{yacy}.
-%%\subsection{FAROO}
-%%To be written~\cite{faroo}.
-
 \section{Where we are now}
 
 Fifteen years have passed since Napster was released, and ten years have passed since the first peer-to-peer search papers were published.  Where are we now?
@@ -136,8 +121,6 @@ Spotify's central servers make the peer-to-peer protocol simpler by providing li
 Skype originally used peer-to-peer technology to provide a user directory and NAT traversal~\cite{skype-p2p}.  Audio and video streams and chat messages go directly from one user to another whenever possible.  Each {\em supernode} maintains a list of logged-in users and a current IP address for each one.  Supernodes also assist in routing calls and chat messages to clients whose device is suspended or behind a firewall.  In 2012, Skype moved all supernode functionality off of end-user PCs and onto dedicated {\em mega-supernodes} in data centers run by Microsoft~\cite{skype-no-p2p,skype-blog}.
 
 Two large, live-video streaming services in China, PPS.tv (PPStream) and Funshion, use peer-to-peer technology.  PPStream uses the DONet protocol, which is an unstructured, mesh-style multicast~\cite{ppstream,donet}.  Funshion is based on BitTorrent~\cite{funshion-bt}.
-
-%%WRITEME: others that have abandoned p2p?  backup apps?  streaming apps?
 
 \subsection{Disadvantages of peer-to-peer systems}
 
