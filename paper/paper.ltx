@@ -42,19 +42,19 @@ Some prominent peer-to-peer services, including Napster, Skype prior to 2012, an
 
 \section{Efficient peer-to-peer searching}
 
-A good peer-to-peer search feature needs to be decentralized, efficient, and complete.  Early peer-to-peer systems were not.  Napster's search feature was centralized, which made it unscalable and easy to shut down.  Gnutella's search feature was both inefficient and incomplete: it flooded queries throughout the network up to a fixed number of hops away from the requester, limited by a time-to-live (TTL) value.  However, it could not locate any resources beyond that number of hops.  Early DHTs did not provide search at all.
+A good peer-to-peer search feature needs to be decentralized, efficient, and complete.  Early peer-to-peer systems were not.  Napster's search feature was centralized, which made it unscalable and easy to shut down.  Gnutella's search feature was both inefficient and incomplete: it flooded queries throughout the network up to a fixed number of hops away from the requester, limited by a time-to-live (TTL) value.  It could not locate any resources beyond that number of hops.  Early DHTs did not provide search at all.
 
 \subsection{Our contribution}
 
 \begin{figure}[t]
 \begin{center}
-\mbox{\subfigure[\small A simple approach to ``AND''
+\mbox{\subfigure[\small A simple approach to ``and''
 queries.  Each node stores a list of document IDs corresponding to one
 keyword.]{
 \scalebox{0.53}{\input{post-scheme-naive}}
 \label{naive}
 }\quad\quad\quad
-\subfigure[\small Bloom filters help reduce the bandwidth requirement of ``AND'' queries.  $F(A)$ is a Bloom filter representing the set $A$, and $B\cap F(A)$ is the set of all elements from $B$ that matched the Bloom filter $F(A)$.]{
+\subfigure[\small Bloom filters help reduce the bandwidth requirement of ``and'' queries.  $F(A)$ is a Bloom filter representing the set $A$, and $B\cap F(A)$ is the set of all elements from $B$ that matched the Bloom filter $F(A)$.]{
 \scalebox{0.53}{\input{post-scheme-bloom2}}
 \label{bloom}
 }}
@@ -62,7 +62,7 @@ keyword.]{
 \caption{Adding a Bloom filter to DHT search}
 \end{figure}
 
-The simplest implementation of keyword search on a DHT uses an {\em inverted index}, as shown in Figure~\ref{naive}.  The DHT maps each keyword to a list of document IDs corresponding to the documents that contain the keyword.  A client performing a search for one keyword retrieves the list of document IDs associated with that keyword.  To perform a conjunctive (``and'') query of multiple keywords, the client retrieves the list of document IDs for each keyword and locally calculates the intersection.  This approach is clearly decentralized and complete, but it is not especially efficient.  If the user searches for keywords that individually appear in many documents but that rarely appear together, then downloading the entire list of document IDs for each word is wasteful.
+The simplest implementation of keyword search on a DHT uses an {\em inverted index}, as shown in Figure~\ref{naive}.  The DHT maps each keyword to a list of document IDs, corresponding to the documents that contain the keyword.  A client performing a search for one keyword retrieves the list of document IDs associated with that keyword.  To perform a conjunctive (``and'') query of multiple keywords, the client retrieves the list of document IDs for each keyword and locally calculates the intersection.  This approach is clearly decentralized and complete, but it is not especially efficient.  If the user searches for keywords that individually appear in many documents but that rarely appear together, then downloading the entire list of document IDs for each word is wasteful.
 
 \begin{figure}[t]
 \begin{center}
@@ -106,7 +106,7 @@ PlanetP~\cite{planetp} is a file sharing system built with an emphasis on search
 
 \subsubsection{OverCite.}
 
-OverCite~\cite{overcite} is a distributed version of CiteSeer, which is a library and search engine for scientific research papers.  OverCite distributes responsibility for storing, indexing, and searching papers among all participating nodes using a DHT.  The responsibility for indexing those documents is divided among $k$ partitions, each of which maps into the DHT.  The rationale for using partitions is to avoid making every search query a broadcast.  Each partition is $1/k$ the size of the full index and is replicated $n/k$ times, so each node must store $1/k$ of the total index and will receive $1/n$ of the query load.  Two additional optimizations are proposed: replicating author and title metadata to all nodes, and replicating common search terms on all nodes.  Both optimizations allow certain queries to be answered by a single node, rather than sending each query to $k$ nodes to cover all partitions.
+OverCite~\cite{overcite} is a distributed version of CiteSeer, which is a library and search engine for scientific research papers.  OverCite distributes responsibility for storing, indexing, and searching papers among all participating nodes using a DHT.  The responsibility for indexing those documents is divided among $k$ partitions; the nodes responsible for a partition in the DHT index the documents contained in the partition.  The rationale for using partitions is to avoid making every search query a broadcast.  Each partition is $1/k$ the size of the full index and is replicated $n/k$ times, so each node must store $1/k$ of the total index and will receive $1/n$ of the query load.  Two additional optimizations are proposed: replicating author and title metadata to all nodes, and replicating common search terms on all nodes.  Both optimizations allow certain queries to be answered by a single node, rather than sending each query to $k$ nodes to cover all partitions.
 
 %%\subsection{InfoBeacons}
 %%To be written~\cite{infobeacons}.
@@ -127,13 +127,13 @@ OverCite~\cite{overcite} is a distributed version of CiteSeer, which is a librar
 
 Fifteen years have passed since Napster was released, and ten years have passed since the first peer-to-peer search papers were published.  Where are we now?
 
-Very few prominent Internet services or businesses use peer-to-peer technology.  The most successful peer-to-peer system by far is file sharing, accounting for 10\% to 20\% of traffic during peak hours, on fixed (not mobile) networks~\cite{sandvine}.  The only other peer-to-peer system that is a household name in the U.S.---clearly a subjective distinction on our part---is Spotify.  Skype used to rely on a peer-to-peer overlay but no longer does.  Peer-to-peer networks are also popular for live and on-demand video streaming services in China.
+Very few prominent Internet services or businesses use peer-to-peer systems.  The most successful peer-to-peer system by far is file sharing, accounting for 10\% to 20\% of traffic during peak hours, on fixed (not mobile) networks~\cite{sandvine}.  The only other peer-to-peer system that is a household name in the U.S.---clearly a subjective distinction on our part---is Spotify.  Skype used to rely on a peer-to-peer overlay but no longer does.  Peer-to-peer networks are also popular for live and on-demand video streaming services in China.
 
 Spotify's network is a hybrid of client-server and peer-to-peer protocols~\cite{spotify}.  Each client keeps a persistent connection open to a Spotify server, through which it can browse available content, learn about other clients currently online, and receive the first fifteen seconds of any song where low latency is required.  Desktop (not mobile) clients retrieve full songs directly from other clients whenever possible.  Clients form an unstructured overlay network and use flooding queries with a TTL of two to search for songs.
 
 Spotify's central servers make the peer-to-peer protocol simpler by providing lists of online clients and by providing a backstop data source for content not present within two overlay hops.  The peer-to-peer network offloads the majority of song download traffic.
 
-Skype originally used peer-to-peer technology to provide a user directory and NAT traversal~\cite{skype-p2p}.  Audio and video streams and chat messages go directly from one user to another whenever possible.  Each {\em supernode} maintains a list of logged-in users and a current IP address for each one.  Supernodes also assist in routing calls and chat messages to clients whose device is suspended or behind a firewall.  In 2012, Skype disabled supernode functionality on end-user PCs and created dedicated {\em mega-supernodes} in data centers run by Microsoft~\cite{skype-no-p2p,skype-blog}.
+Skype originally used peer-to-peer technology to provide a user directory and NAT traversal~\cite{skype-p2p}.  Audio and video streams and chat messages go directly from one user to another whenever possible.  Each {\em supernode} maintains a list of logged-in users and a current IP address for each one.  Supernodes also assist in routing calls and chat messages to clients whose device is suspended or behind a firewall.  In 2012, Skype moved all supernode functionality off of end-user PCs and onto dedicated {\em mega-supernodes} in data centers run by Microsoft~\cite{skype-no-p2p,skype-blog}.
 
 Two large, live-video streaming services in China, PPS.tv (PPStream) and Funshion, use peer-to-peer technology.  PPStream uses the DONet protocol, which is an unstructured, mesh-style multicast~\cite{ppstream,donet}.  Funshion is based on BitTorrent~\cite{funshion-bt}.
 
